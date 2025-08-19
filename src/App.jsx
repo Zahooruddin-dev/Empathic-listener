@@ -391,9 +391,9 @@ export default function App() {
 				const sUser = sentimentScore(question);
 				const wrap =
 					sUser < 0 && state.empathicMode
-						? `🫶 You’re not alone. Here’s a gentle take:\n\n${text}`
+						? `🫶 \n\n${text}`
 						: text;
-
+//You’re not alone. Here’s a gentle take:
 				cacheRef.current.set(question, wrap);
 				setState((s) => ({
 					...s,
