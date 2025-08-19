@@ -17,16 +17,6 @@ import {
 	FaUser,
 } from 'react-icons/fa';
 
-/**
- * ALL-IN-ONE APP.JSX — Empathic Listener
- * - Single-file implementation as requested (no external components)
- * - Voice input + TTS, copy, share/export, import, local cache, localStorage persistence
- * - Prompt enhancer + slash commands + presets
- * - Lightweight sentiment analysis to shape responses and follow-ups
- * - Retry with backoff, basic rate-limit handling, and client-side debounced autosave
- * - Clean Tailwind-first UI (no external CSS required)
- */
-
 const GEMINI_ENDPOINT = (key) =>
 	`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
 const LOCAL_KEY = 'empathic_listener_state_v2';
@@ -371,8 +361,21 @@ export default function App() {
 
 		while (attempt < MAX_ATTEMPTS) {
 			try {
+				const contents = [];
+				// Add conversation history (last 10 messages for context)
+				const recentChat = state.chat.slice(-10);
+				recentChat.forEach((msg) => {
+					if (msg.role === 'user') {
+						contents.push({ role: 'user', parts: [{ text: msg.text }] });
+					} else if (msg.role === 'assistant' && !msg.error) {
+						contents.push({ role: 'model', parts: [{ text: msg.text }] });
+					}
+				});
+				// Add current enhanced message
+				contents.push({ role: 'user', parts: [{ text: enhanced }] });
+
 				const payload = {
-					contents: [{ role: 'user', parts: [{ text: enhanced }] }],
+					contents,
 					generationConfig: {
 						temperature: clamp(Number(state.temperature) || 0.7, 0, 2),
 						topP: clamp(Number(state.topP) || 0.95, 0, 1),
@@ -389,11 +392,8 @@ export default function App() {
 
 				// Optionally wrap with a tiny empathetic header on negative user sentiment
 				const sUser = sentimentScore(question);
-				const wrap =
-					sUser < 0 && state.empathicMode
-						? `🫶 \n\n${text}`
-						: text;
-//You’re not alone. Here’s a gentle take:
+				const wrap = sUser < 0 && state.empathicMode ? `🫶 \n\n${text}` : text;
+				//You’re not alone. Here’s a gentle take:
 				cacheRef.current.set(question, wrap);
 				setState((s) => ({
 					...s,
