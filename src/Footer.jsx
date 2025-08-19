@@ -4,9 +4,9 @@ const Footer = () => {
   return (
     <footer className="bg-rgb(16, 25, 46) text-white py-4 text-center shadow-lg w-full">
       <div className="container mx-auto px-4">
-      <h1 className="text-2xl font-bold text-center">Helpmate AI</h1>
+      <h1 className="text-2xl font-bold text-center">Empathic listener</h1>
         <p className="text-sm text-gray-300 mb-4">
-         Helpmate AI has been selected for the Gemini API Developer Competition and is recognized by Google AI.
+         Empathic listener has been selected for the Gemini API Developer Competition and is recognized by Google AI.
         </p>
         <div className="flex justify-center space-x-4 mb-3">
           <a
@@ -23,7 +23,7 @@ const Footer = () => {
             <FaRocket className="mr-1" /> Vote Now
           </a>
         </div>
-        <p className="text-xs text-gray-500">&copy; 2025 HelpMate AI. All rights reserved.</p>
+        <p className="text-xs text-gray-500">&copy; 2025 Empathic listener. All rights reserved.</p>
       </div>
     </footer>
   );

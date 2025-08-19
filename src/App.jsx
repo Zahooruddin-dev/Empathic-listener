@@ -157,7 +157,7 @@ function App() {
 
     <div className="flex flex-col w-screen h-screen bg-gray-950 text-white">
       <nav className="p-4 bg-[#040E23]">
-        <h1 className="text-2xl font-bold text-center">Helpmate AI</h1>
+        <h1 className="text-2xl font-bold text-center">Empathic listener</h1>
       </nav>
       <div className="flex-grow p-4">
         <div className="chat-display space-y-4">
