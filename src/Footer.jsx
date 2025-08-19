@@ -10,17 +10,17 @@ const Footer = () => {
         </p>
         <div className="flex justify-center space-x-4 mb-3">
           <a
-            href="https://github.com/codeaashu/Helpmate-AI"
+            href="https://github.com/Zahooruddin-dev/Empathic-listener"
             className="text-blue-400 hover:text-white transform hover:scale-110 transition duration-300 flex items-center"
           >
             <FaGithub className="mr-1" /> GitHub
           </a>
           <span className="text-gray-500">|</span>
           <a
-            href="https://ai.google.dev/competition/projects/helpmate-ai"
+            href="https://mizuka.vercel.app/"
             className="text-blue-400 hover:text-white transform hover:scale-110 transition duration-300 flex items-center"
           >
-            <FaRocket className="mr-1" /> Vote Now
+            <FaRocket className="mr-1" /> Visit Me
           </a>
         </div>
         <p className="text-xs text-gray-500">&copy; 2025 Empathic listener. All rights reserved.</p>
