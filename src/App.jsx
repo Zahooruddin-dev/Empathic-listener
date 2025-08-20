@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -27,23 +27,38 @@ const clamp = (v, a, b) => Math.max(a, Math.min(v, b));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function useLocalStorageState(key, initial) {
+	// Initialize state from localStorage or use initial value
 	const [state, setState] = useState(() => {
 		try {
-			const raw = localStorage.getItem(key);
-			return raw ? JSON.parse(raw) : initial;
-		} catch {
+			const item = localStorage.getItem(key);
+			if (item) {
+				return JSON.parse(item);
+			}
+			// If no value in localStorage, save initial and return it
+			localStorage.setItem(key, JSON.stringify(initial));
+			return initial;
+		} catch (error) {
+			console.error('LocalStorage error:', error);
 			return initial;
 		}
 	});
-	useEffect(() => {
-		const id = setTimeout(() => {
+
+	// Update localStorage immediately when state changes
+	const setStateAndStorage = useCallback(
+		(value) => {
 			try {
-				localStorage.setItem(key, JSON.stringify(state));
-			} catch {}
-		}, 250);
-		return () => clearTimeout(id);
-	}, [key, state]);
-	return [state, setState];
+				// Handle function updates
+				const newState = value instanceof Function ? value(state) : value;
+				setState(newState);
+				localStorage.setItem(key, JSON.stringify(newState));
+			} catch (error) {
+				console.error('LocalStorage save error:', error);
+			}
+		},
+		[key, state]
+	);
+
+	return [state, setStateAndStorage];
 }
 
 // Naive keyword sentiment (client-side hinting only)
@@ -197,30 +212,21 @@ export default function App() {
 		topP: 0.95,
 		topK: 40,
 		quickReplies: true,
-		empathicMode: true,
 		model: 'gemini-2.0-flash',
 		chat: [], // {role: 'user'|'assistant', text, ts}
 		input: '',
 		presets: [
 			{
-				label: 'Empathic',
-				prompt:
-					'Please listen with empathy and reflect feelings, needs, and offer gentle next steps.',
+				label: 'Help',
+				prompt: 'I need assistance with something.',
 			},
 			{
-				label: 'Coach',
-				prompt:
-					'Act as a supportive life coach. Ask one clarifying question, then suggest a next action.',
+				label: 'Explain',
+				prompt: 'Can you explain this topic?',
 			},
 			{
-				label: 'Solution',
-				prompt:
-					'Be concise and solution-focused: summarize problem in one line; list 3 options; ask for preference.',
-			},
-			{
-				label: 'Journal',
-				prompt:
-					'You are a reflective journaling companion. Reframe my thoughts without judgment and suggest a 2-minute exercise.',
+				label: 'Analyze',
+				prompt: 'Help me analyze this situation.',
 			},
 		],
 	});
@@ -265,18 +271,11 @@ export default function App() {
 
 	// ------- Prompt enhancement & command routing -------
 	const enhancePrompt = (raw) => {
-		const sScore = sentimentScore(raw);
-		const toneHint =
-			sScore < 0
-				? 'gentle, validating, non-judgmental'
-				: sScore > 0
-				? 'encouraging, balanced'
-				: 'neutral, respectful';
-		const empathicScaffold = state.empathicMode
-			? `\n\nFollow this structure briefly: 1) Reflect what you heard, 2) Name underlying needs/values, 3) Offer 2 options (self-care + practical), 4) Ask a small open question.`
-			: '';
-
-		return `You are an empathic, trauma-informed AI listener. Avoid medical/clinical claims. Be kind, concise and specific. Use plain language.\nTone: ${toneHint}.${empathicScaffold}\n\nUser message: ${raw}`;
+		return `You are Mizuka AI, a professional AI assistant. Be direct, clear and helpful.
+  If asked about your identity, say you are Mizuka AI.
+  Keep responses concise and natural without following rigid structures.
+  
+  User message: ${raw}`;
 	};
 
 	const routeSlashCommand = (text) => {
@@ -624,51 +623,38 @@ export default function App() {
 }
 
 function MessageBubble({ m }) {
-	const mine = m.role === 'user';
-	return (
-		<div
-			className={classNames(
-				'flex gap-3',
-				mine ? 'justify-end' : 'justify-start'
-			)}
-		>
-			{!mine && (
-				<div className='mt-1 shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center'>
-					<FaRobot className='text-black' />
-				</div>
-			)}
-			<div
-				className={classNames(
-					'max-w-[90%] sm:max-w-[75%] rounded-2xl border px-3 py-2',
-					mine
-						? 'bg-blue-600 border-blue-500 text-white'
-						: 'bg-gray-900 border-gray-800 text-gray-100'
-				)}
-			>
-				<div className='prose prose-invert prose-p:my-2 prose-pre:my-2 prose-ul:my-2 text-sm'>
-					<ReactMarkdown>{m.text}</ReactMarkdown>
-				</div>
-				<div className='mt-2 flex items-center justify-between text-[11px] text-gray-400'>
-					<div>
-						{formatTime(m.ts)}{' '}
-						{m.cached && <span className='ml-1'>· cached</span>}{' '}
-						{m.error && <span className='ml-1 text-red-400'>· error</span>}
-					</div>
-					{!mine && (
-						<div className='flex items-center gap-1'>
-							<SpeakButton text={m.text} />
-							<CopyButton text={m.text} />
-						</div>
-					)}
-				</div>
-			</div>
-			{mine && (
-				<div className='mt-1 shrink-0 w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center'>
-					<FaUser />
-				</div>
-			)}
-		</div>
-	);
+  const isUser = m.role === 'user';
+  return (
+    <div className={classNames('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
+      {!isUser && (
+        <div className='mt-1 shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center'>
+          <FaRobot className='text-black' />
+        </div>
+      )}
+      <div className={classNames(
+        'max-w-[90%] sm:max-w-[75%] rounded-2xl border px-3 py-2',
+        isUser ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-900 border-gray-800 text-gray-100'
+      )}>
+        <div className='prose prose-invert prose-p:my-2 prose-pre:my-2 prose-ul:my-2 text-sm'>
+          <ReactMarkdown>{m.text}</ReactMarkdown>
+        </div>
+        <div className='mt-2 flex items-center justify-between text-[11px] text-gray-400'>
+          <div>{formatTime(m.ts)}</div>
+          {!isUser && (
+            <div className='flex items-center gap-1'>
+              <SpeakButton text={m.text} />
+              <CopyButton text={m.text} />
+            </div>
+          )}
+        </div>
+      </div>
+      {isUser && (
+        <div className='mt-1 shrink-0 w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center'>
+          <FaUser />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Settings({ state, setState }) {
